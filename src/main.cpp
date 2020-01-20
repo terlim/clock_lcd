@@ -5,7 +5,7 @@
 
 #include <Adafruit_GFX.h>
 #include "..\lib\TFT_ILI9163C\TFT_ILI9163C.h" 
-#include <Adafruit_BMP280.h>
+#include "..\lib\AdafruitBME280\Adafruit_BME280.h"
 
 #include "..\lib\DS3231\DS3231.h"
 
@@ -20,7 +20,7 @@
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 TFT_ILI9163C tft = TFT_ILI9163C(__CS, __DC, __RES);
-Adafruit_BMP280 bmp;
+Adafruit_BME280 bme; // I2C
 
 
 
@@ -34,18 +34,20 @@ void setup() {
   Serial.println("Initialize DS3231");
   clock.begin();
   tft.begin();
-  // if(!bmp.begin())
-  //  {
-  //     Serial.println("BMP280 SENSOR ERROR"); // Выводим сообщение об ошибке
-	//      while(1); // Переходим в бесконечный цикл
-	//  }
+  if(!bme.begin(0x76, &Wire))
+    {
+       Serial.println("BME280 SENSOR ERROR"); // Выводим сообщение об ошибке
+	      while(1); // Переходим в бесконечный цикл
+	  }
 
   //clock.setDateTime(__DATE__, __TIME__);
 }
 
+
 void loop() {
   clock.forceConversion();
   dt = clock.getDateTime();
+  
   if (dt.second<10)
   {
     second = "0" + String(dt.second);
@@ -65,35 +67,7 @@ void loop() {
     hour =  String(dt.hour);
   }
   
-  // // Выводим значение температуры
-
-	//  Serial.print(F("Temperature = "));
-
-	//  Serial.print(bmp.readTemperature()); // Функция измерения температуры
-
-	//  Serial.println(" *C");
-
-	  
-
-
-
-	//  // Выводим значение атмосферного давления
-
-	//  Serial.print(F("Pressure = "));
-
-	//  Serial.print(bmp.readPressure()); // Функция измерения атм. давления
-
-	//  Serial.println(" Pa");	  
-
-
-
-	//  // Выводим значение высоты
-
-	//  Serial.print(F("Approx altitude = "));
-
-	//  Serial.print(bmp.readAltitude(1013.25)); // Функция измерения высоты
-
-	//  Serial.println(" m");
+  
 
   tft.drawRect(2,1,126,127,GREEN);
   tft.setTextSize(1); 
@@ -134,10 +108,13 @@ void loop() {
   tft.setCursor(4,45);                                        
   tft.setTextColor(YELLOW,BLACK); 
   tft.print(utf8rus("Темп 2: "));
- 
-  tft.setCursor(78,45);  
+   
+  tft.setCursor(65,45);  
   tft.setTextColor(RED,BLACK);                                 
-  tft.print(bmp.readTemperature());
+  tft.print(bme.readTemperature());
+  tft.setCursor(100,45);
+  tft.setTextColor(YELLOW,BLACK);
+  tft.print(utf8rus("\x80\C"));
 
 
   tft.setTextSize(1); 
@@ -145,9 +122,22 @@ void loop() {
   tft.setTextColor(YELLOW,BLACK); 
   tft.print(utf8rus("Давление: "));
  
-  tft.setCursor(78,65);  
+  tft.setCursor(65,65);  
   tft.setTextColor(RED,BLACK);                                 
-  tft.print(bmp.readTemperature());
+  tft.print(bme.readPressure()*0.0075);
+  
+
+  tft.setTextSize(1); 
+  tft.setCursor(4,85);                                        
+  tft.setTextColor(YELLOW,BLACK); 
+  tft.print(utf8rus("Влажность: "));
+ 
+  tft.setCursor(65,85);  
+  tft.setTextColor(RED,BLACK);                                 
+  tft.print(bme.readHumidity());
+  tft.setCursor(100,85);
+  tft.setTextColor(YELLOW,BLACK);
+  tft.print(utf8rus("%"));
 
   delay(500);
 }
